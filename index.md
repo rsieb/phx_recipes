@@ -100,14 +100,15 @@ Complete guide to testing Phoenix applications including:
 
 ### Configuration & Environment
 
-#### [Configuration and Secrets](config/config_and_secrets.md)
-Manage application configuration and secrets securely across environments.
-
-#### [Environment Best Practices](config/environment_best_practices_in_phoenix.md)
-Best practices for managing Phoenix environments from development to production.
-
-#### [Environment Configuration for Fly](config/environment_configuration_phoenix_fly.md)
-Configure Phoenix applications for deployment on Fly.io.
+#### [Configuration Management](config/configuration_management.md)
+Comprehensive guide to Phoenix configuration including:
+- Configuration architecture (config files, runtime.exs)
+- Environment-specific settings (dev, test, staging, prod)
+- Secrets management best practices
+- Database configuration across environments
+- Production deployment configuration (including Fly.io)
+- Configuration validation and testing
+- Common patterns and anti-patterns
 
 ### Deployment & Production
 
