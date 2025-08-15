@@ -1,5 +1,12 @@
 # Phoenix LiveView Basics Recipe
 
+---
+Phoenix Version: 1.7+
+Complexity: Intermediate
+Time to Implement: 2-3 hours
+Prerequisites: Phoenix contexts understanding, HTML/web development basics, Elixir pattern matching, Ecto changesets
+---
+
 ## Prerequisites & Related Recipes
 
 ### Prerequisites

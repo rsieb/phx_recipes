@@ -1,5 +1,12 @@
 # Phoenix Contexts Recipe
 
+---
+Phoenix Version: 1.7+
+Complexity: Intermediate
+Time to Implement: 1-2 hours
+Prerequisites: Basic Elixir knowledge, Ecto schema understanding, Phoenix app structure familiarity
+---
+
 ## Prerequisites & Related Recipes
 
 ### Prerequisites

@@ -1,5 +1,12 @@
 # Comprehensive Phoenix Testing Guide
 
+---
+Phoenix Version: 1.7+
+Complexity: Beginner to Advanced
+Time to Implement: Varies by test complexity (15 minutes for basic tests to several hours for comprehensive test suites)
+Prerequisites: Phoenix architecture understanding, Ecto schemas/changesets, ExUnit basics, database transactions
+---
+
 ## Prerequisites & Related Recipes
 
 ### Prerequisites

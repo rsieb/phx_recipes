@@ -1,5 +1,12 @@
 # Ecto Schema Basics Recipe
 
+---
+Phoenix Version: 1.7+
+Complexity: Beginner
+Time to Implement: 30 minutes
+Prerequisites: Basic Elixir structs and modules, database concepts, data validation basics
+---
+
 ## Prerequisites & Related Recipes
 
 ### Prerequisites

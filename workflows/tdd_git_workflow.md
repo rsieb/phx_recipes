@@ -1,5 +1,12 @@
 # TDD Git Workflow Recipe - Feature Branch + Test-First Development
 
+---
+Phoenix Version: 1.7+
+Complexity: Beginner
+Time to Implement: 15 minutes to understand, ongoing practice
+Prerequisites: Git basics, Phoenix project structure, understanding of TDD principles
+---
+
 ```bash
 # Prerequisites: Ensure you have git configured
 git config --global user.name "Your Name"
