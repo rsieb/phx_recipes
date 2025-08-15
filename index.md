@@ -38,13 +38,13 @@ Design fault-tolerant applications using OTP supervisor trees.
 #### [Application Module](core/application_module.md)
 Configure and manage your Phoenix application lifecycle and supervision tree.
 
-#### [Oban Background Jobs](core/oban_and_oban_testing_recipe.md)
+#### [Oban Background Jobs](core/oban_background_jobs.md)
 Implement reliable background job processing with Oban.
 
-#### [Phoenix Scaffolding](core/phoenix_scaffolding_recipe.md)
+#### [Phoenix Scaffolding](core/phoenix_scaffolding.md)
 Rapidly generate Phoenix resources and understand the generated code.
 
-#### [Typespecs and Dialyzer](core/typespecs_dialyzer_recipe.md)
+#### [Typespecs and Dialyzer](core/typespecs_dialyzer.md)
 Add type specifications and static analysis to your Elixir code.
 
 #### [Authentication & Authorization](core/authentication_authorization.md)
@@ -75,7 +75,7 @@ Build interactive, real-time web applications with Phoenix LiveView.
 #### [Phoenix LiveView Uploads](components/phoenix_liveview_uploads.md)
 Handle file uploads in LiveView with progress tracking and validation.
 
-#### [Phoenix Components](components/phoenix_components_recipe.md)
+#### [Phoenix Components](components/phoenix_components.md)
 Create reusable UI components for Phoenix applications.
 
 #### [Component Architecture](components/component_architecture.md)
@@ -93,7 +93,7 @@ Debug and resolve common Phoenix connection and socket issues.
 #### [Traditional vs LiveView](components/phoenix_prefer_traditional_use_liveview_sparingly.md)
 Guidelines for choosing between traditional Phoenix and LiveView approaches.
 
-#### [Livebook Integration](components/livebook_recipe.md)
+#### [Livebook Integration](components/livebook_integration.md)
 Integrate Livebook for interactive documentation and data exploration.
 
 #### [WebSocket Patterns](components/websocket_patterns.md)
@@ -124,10 +124,10 @@ Comprehensive guide to Phoenix configuration including:
 
 ### Deployment & Production
 
-#### [Fly.io Deployment and Debugging](deployment/fly-io_phoenix_deployments_and_production_debugging.md)
+#### [Fly.io Deployment and Debugging](deployment/fly_deployment_debugging.md)
 Deploy Phoenix applications to Fly.io and debug production issues.
 
-#### [Systematic Debugging](deployment/systematic-debugging-of-staging-or-production-on-fly-and-supabase.md)
+#### [Production Debugging](deployment/production_debugging.md)
 Systematic approach to debugging staging and production environments.
 
 #### [CI/CD Pipeline](deployment/cicd_pipeline.md)
@@ -135,7 +135,7 @@ Set up continuous integration and deployment for Phoenix applications.
 
 ### Development Workflows
 
-#### [TDD Git Workflow](workflows/tdd_git_workflow_recipe.md)
+#### [TDD Git Workflow](workflows/tdd_git_workflow.md)
 Integrate Test-Driven Development with Git workflows for Phoenix projects.
 
 #### [MVP Principles](workflows/mvp_principles.md)
@@ -144,13 +144,13 @@ Core MVP philosophy and decision frameworks for fast shipping.
 #### [MVP Phoenix Patterns](workflows/mvp_phoenix_patterns.md)
 Phoenix-specific technology choices and implementation patterns for MVPs.
 
-#### [Combined Workflow](workflows/combined_workflow_recipe.md)
+#### [Combined Workflow](workflows/combined_workflow.md)
 Integrate multiple development workflows for maximum productivity.
 
-#### [No External Scripts](workflows/no_external_scripts_recipe.md)
+#### [No External Scripts](workflows/no_external_scripts.md)
 Develop Phoenix applications without relying on external scripts.
 
-#### [Template Recipe](workflows/template_elixir_phoenix_recipe.md)
+#### [Recipe Template](workflows/recipe_template.md)
 Template for creating new Phoenix recipes and documentation.
 
 ## How to Use These Recipes
