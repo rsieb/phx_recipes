@@ -89,17 +89,14 @@ Integrate Livebook for interactive documentation and data exploration.
 
 ### Testing
 
-#### [Testing ConnCase](testing/testing_conncase.md)
-Test Phoenix controllers, authentication, and HTTP interactions effectively.
-
-#### [Testing LiveView](testing/testing_liveview.md)
-Test LiveView applications including user interactions and real-time features.
-
-#### [Phoenix TDD Recipe](testing/phoenix_tdd_recipe.md)
-Implement Test-Driven Development practices in Phoenix applications.
-
-#### [Router Testing](testing/phoenix_router_testing_recipe.md)
-Comprehensive testing strategies for Phoenix routers and pipelines.
+#### [Comprehensive Testing Guide](testing/comprehensive_testing_guide.md)
+Complete guide to testing Phoenix applications including:
+- Unit testing (schemas, changesets, contexts)
+- Controller testing with ConnCase
+- LiveView component and interaction testing
+- Test-Driven Development (TDD) workflow
+- Testing helpers and best practices
+- Common patterns and anti-patterns
 
 ### Configuration & Environment
 
