@@ -72,8 +72,11 @@ Handle file uploads in LiveView with progress tracking and validation.
 #### [Phoenix Components](components/phoenix_components_recipe.md)
 Create reusable UI components for Phoenix applications.
 
-#### [Phoenix Componentization](components/phoenix_componentization_recipe.md)
-Architect component-based Phoenix applications with proper composition patterns.
+#### [Component Architecture](components/component_architecture.md)
+Architectural patterns and composition strategies for Phoenix components.
+
+#### [Component Implementation](components/component_implementation.md)
+Practical implementation patterns and examples for Phoenix componentization.
 
 #### [Phoenix Channels](components/phoenix_channels.md)
 Create real-time bidirectional communication using Phoenix Channels and WebSockets.
@@ -123,8 +126,11 @@ Systematic approach to debugging staging and production environments.
 #### [TDD Git Workflow](workflows/tdd_git_workflow_recipe.md)
 Integrate Test-Driven Development with Git workflows for Phoenix projects.
 
-#### [MVP Focus Recipe](workflows/mvp_focus_recipe.md)
-Build Minimum Viable Products efficiently with Phoenix.
+#### [MVP Principles](workflows/mvp_principles.md)
+Core MVP philosophy and decision frameworks for fast shipping.
+
+#### [MVP Phoenix Patterns](workflows/mvp_phoenix_patterns.md)
+Phoenix-specific technology choices and implementation patterns for MVPs.
 
 #### [Combined Workflow](workflows/combined_workflow_recipe.md)
 Integrate multiple development workflows for maximum productivity.
