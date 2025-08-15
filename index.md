@@ -47,6 +47,9 @@ Rapidly generate Phoenix resources and understand the generated code.
 #### [Typespecs and Dialyzer](core/typespecs_dialyzer_recipe.md)
 Add type specifications and static analysis to your Elixir code.
 
+#### [Authentication & Authorization](core/authentication_authorization.md)
+Comprehensive authentication and authorization patterns for Phoenix applications.
+
 ### Data Layer
 
 #### [Ecto Schema Basics](data/ecto_schema_basics.md)
@@ -60,6 +63,9 @@ Handle complex database operations with transactions using Ecto.Multi for data c
 
 #### [Ecto Migrations](data/ecto_migrations.md)
 Manage database schema changes over time with Ecto migrations.
+
+#### [Database Performance](data/database_performance.md)
+Optimize database queries and performance in Ecto applications.
 
 ### Components & UI
 
@@ -89,6 +95,9 @@ Guidelines for choosing between traditional Phoenix and LiveView approaches.
 
 #### [Livebook Integration](components/livebook_recipe.md)
 Integrate Livebook for interactive documentation and data exploration.
+
+#### [WebSocket Patterns](components/websocket_patterns.md)
+Advanced WebSocket patterns for real-time features beyond basic channels.
 
 ### Testing
 
@@ -120,6 +129,9 @@ Deploy Phoenix applications to Fly.io and debug production issues.
 
 #### [Systematic Debugging](deployment/systematic-debugging-of-staging-or-production-on-fly-and-supabase.md)
 Systematic approach to debugging staging and production environments.
+
+#### [CI/CD Pipeline](deployment/cicd_pipeline.md)
+Set up continuous integration and deployment for Phoenix applications.
 
 ### Development Workflows
 
