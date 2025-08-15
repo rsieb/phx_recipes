@@ -1,5 +1,21 @@
 # Comprehensive Phoenix Testing Guide
 
+## Prerequisites & Related Recipes
+
+### Prerequisites
+- Understanding of Phoenix application architecture (contexts, controllers, LiveView)
+- Basic knowledge of Ecto schemas and changesets
+- Familiarity with ExUnit testing framework
+- Understanding of database transactions and test isolation
+
+### Related Recipes
+- **Foundation**: [Ecto Schema Basics](../data/ecto_schema_basics.md) - Testing schema validations and changesets
+- **Business Logic**: [Phoenix Contexts](../core/phoenix_contexts.md) - Testing context functions and business logic
+- **Web Layer**: [Phoenix LiveView Basics](../components/phoenix_liveview_basics.md) - Testing LiveView interactions and real-time features
+- **TDD Workflow**: [Phoenix TDD Recipe](../workflows/phoenix_tdd_recipe.md) - Test-driven development methodology
+- **Git Workflow**: [TDD Git Workflow](../workflows/tdd_git_workflow_recipe.md) - Integrating TDD with version control
+- **Advanced Testing**: [Testing Real-time Features](../testing/testing_real_time_features.md) - Testing channels and presence
+
 ## Introduction
 
 This guide provides a complete testing strategy for Phoenix applications, covering everything from basic unit tests to complex LiveView interactions. Phoenix's testing ecosystem is built on ExUnit and provides specialized tools for testing web applications, LiveView components, and real-time features.

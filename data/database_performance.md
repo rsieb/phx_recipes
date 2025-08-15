@@ -1,30 +1,63 @@
 # Database Performance Recipe
 
+## Prerequisites & Related Recipes
+
+### Prerequisites
+- Understanding of Ecto schemas and basic querying
+- Familiarity with Phoenix contexts pattern
+- Basic knowledge of database concepts (indexes, joins, aggregations)
+
+### Related Recipes
+- **Foundation**: [Ecto Schema Basics](../data/ecto_schema_basics.md) - Understanding schema structure for optimization
+- **Business Logic**: [Phoenix Contexts](../core/phoenix_contexts.md) - Implementing optimized queries within contexts
+- **Testing**: [Comprehensive Testing Guide](../testing/comprehensive_testing_guide.md) - Testing query performance and behavior
+
 ## Introduction
 
-Database performance is critical for Phoenix applications. This recipe covers comprehensive patterns for optimizing database interactions using Ecto, including query optimization, preloading strategies, N+1 query prevention, index usage, connection pooling, and read replica configurations following Phoenix best practices.
+Database performance directly impacts user experience and application scalability. This recipe covers when and how to optimize database interactions in Phoenix applications, focusing on query optimization, preloading strategies, N+1 prevention, and connection management.
 
-## Query Optimization with Ecto
+## When to Optimize Database Performance
 
-### Efficient Query Patterns
+**Optimize early when:**
+- Building data-intensive applications
+- Expecting high traffic from launch
+- Working with complex data relationships
+
+**Optimize reactively when:**
+- Experiencing slow page loads
+- Database CPU/memory usage is high
+- Users complain about response times
+
+**Don't optimize when:**
+- Building MVPs with simple data needs
+- Premature optimization without measurements
+- Traffic is low and performance is adequate
+
+## Query Optimization Fundamentals
+
+The key to fast queries is selecting only what you need and using the database efficiently. Ecto makes this straightforward with its composable query syntax.
 
 ```elixir
 defmodule MyApp.Blog do
   import Ecto.Query
   alias MyApp.Repo
-  alias MyApp.Blog.{Post, Comment, Tag}
 
-  # Use select to limit returned fields
-  def list_post_summaries do
+  # ❌ Don't: Load full records when you only need fields
+  def list_post_titles_bad do
+    Repo.all(Post) |> Enum.map(& &1.title)
+  end
+
+  # ✅ Do: Use select to limit returned fields
+  def list_post_titles do
     from(p in Post,
-      select: %{id: p.id, title: p.title, published_at: p.published_at},
+      select: %{id: p.id, title: p.title},
       where: p.published == true,
       order_by: [desc: p.published_at]
     )
     |> Repo.all()
   end
 
-  # Use joins instead of separate queries
+  # ✅ Do: Use joins instead of separate queries
   def posts_with_comment_counts do
     from(p in Post,
       left_join: c in assoc(p, :comments),
@@ -33,153 +66,51 @@ defmodule MyApp.Blog do
       select: %{
         id: p.id,
         title: p.title,
-        content: p.content,
         comment_count: count(c.id)
       }
     )
     |> Repo.all()
   end
-
-  # Use exists? for conditional queries
-  def posts_with_comments do
-    from(p in Post,
-      where: exists(from c in Comment, where: c.post_id == p.id)
-    )
-    |> Repo.all()
-  end
-
-  # Use window functions for pagination with counts
-  def paginated_posts_with_total(page, per_page) do
-    offset = (page - 1) * per_page
-
-    query = from(p in Post,
-      select: %{
-        post: p,
-        total_count: over(count(), :posts_partition)
-      },
-      windows: [posts_partition: [partition_by: 1]],
-      order_by: [desc: p.inserted_at],
-      limit: ^per_page,
-      offset: ^offset
-    )
-
-    case Repo.all(query) do
-      [] -> {[], 0}
-      results ->
-        posts = Enum.map(results, & &1.post)
-        total = List.first(results).total_count
-        {posts, total}
-    end
-  end
-
-  # Batch queries for multiple IDs
-  def get_posts_by_ids(ids) when is_list(ids) do
-    from(p in Post, where: p.id in ^ids)
-    |> Repo.all()
-    |> Enum.into(%{}, &{&1.id, &1})
-  end
-
-  # Use fragments for complex database functions
-  def search_posts(term) do
-    search_term = "%#{term}%"
-    
-    from(p in Post,
-      where: fragment("? @@ to_tsquery(?)", p.search_vector, ^term),
-      # Fallback to ILIKE for partial matches
-      or_where: ilike(p.title, ^search_term) or ilike(p.content, ^search_term),
-      order_by: [
-        desc: fragment("ts_rank(?, to_tsquery(?))", p.search_vector, ^term),
-        desc: p.published_at
-      ]
-    )
-    |> Repo.all()
-  end
 end
 ```
 
-### Query Composition and Reusability
+**Why this works:** Using `select` reduces memory usage and network transfer. Joins in a single query are much faster than N separate queries. The database can optimize joined queries efficiently.
 
-```elixir
-defmodule MyApp.Blog.PostQueries do
-  import Ecto.Query
-  alias MyApp.Blog.Post
+**When to use:** Always prefer `select` when you don't need full structs. Use joins when you need related data in the same operation.
 
-  def base_query do
-    from p in Post, as: :post
-  end
+## Strategic Preloading
 
-  def published(query \\ base_query()) do
-    from [post: p] in query,
-      where: p.published == true
-  end
-
-  def by_author(query \\ base_query(), author_id) do
-    from [post: p] in query,
-      where: p.author_id == ^author_id
-  end
-
-  def by_tag(query \\ base_query(), tag_name) do
-    from [post: p] in query,
-      join: t in assoc(p, :tags),
-      where: t.name == ^tag_name
-  end
-
-  def recent_first(query \\ base_query()) do
-    from [post: p] in query,
-      order_by: [desc: p.published_at]
-  end
-
-  def with_comment_count(query \\ base_query()) do
-    from [post: p] in query,
-      left_join: c in assoc(p, :comments),
-      group_by: p.id,
-      select_merge: %{comment_count: count(c.id)}
-  end
-
-  def limit_to(query \\ base_query(), limit) do
-    from q in query, limit: ^limit
-  end
-
-  # Usage examples
-  def recent_published_posts_by_author(author_id, limit \\ 10) do
-    base_query()
-    |> published()
-    |> by_author(author_id)
-    |> recent_first()
-    |> limit_to(limit)
-  end
-
-  def popular_posts_with_comments do
-    base_query()
-    |> published()
-    |> with_comment_count()
-    |> recent_first()
-  end
-end
-```
-
-## Preloading Strategies
-
-### Strategic Preloading Patterns
+Preloading solves N+1 queries by loading related data in batches. The key is loading only what you need, when you need it.
 
 ```elixir
 defmodule MyApp.Blog do
-  import Ecto.Query
-  alias MyApp.Repo
-
-  # Basic preloading
-  def get_post_with_author!(id) do
-    Repo.get!(Post, id)
-    |> Repo.preload(:author)
+  # ❌ Don't: This creates N+1 queries
+  def list_posts_with_authors_bad do
+    posts = Repo.all(Post)
+    Enum.map(posts, fn post ->
+      %{post | author: Repo.get!(User, post.author_id)}
+    end)
   end
 
-  # Nested preloading
-  def get_post_with_comments_and_authors!(id) do
-    Repo.get!(Post, id)
-    |> Repo.preload([comments: :author])
+  # ✅ Do: Preload related data
+  def list_posts_with_authors do
+    from(p in Post, preload: [:author])
+    |> Repo.all()
   end
 
-  # Selective preloading with custom queries
+  # ✅ Do: Conditional preloading for different use cases
+  def list_posts(include_comments: include_comments?) do
+    query = from p in Post, order_by: [desc: p.published_at]
+    
+    if include_comments? do
+      from q in query, preload: [comments: [:author]]
+    else
+      query
+    end
+    |> Repo.all()
+  end
+
+  # ✅ Do: Custom queries for preloading
   def get_post_with_recent_comments!(id) do
     recent_comments_query = 
       from c in Comment,
@@ -190,172 +121,82 @@ defmodule MyApp.Blog do
     Repo.get!(Post, id)
     |> Repo.preload([comments: recent_comments_query])
   end
-
-  # Conditional preloading
-  def list_posts(preload_associations \\ []) do
-    Post
-    |> Repo.all()
-    |> Repo.preload(preload_associations)
-  end
-
-  # Preloading with custom select
-  def get_post_with_author_summary!(id) do
-    author_query = 
-      from a in MyApp.Accounts.User,
-        select: %{id: a.id, name: a.name, email: a.email}
-
-    Repo.get!(Post, id)
-    |> Repo.preload([author: author_query])
-  end
-
-  # Batch preloading for multiple records
-  def preload_posts_associations(posts) do
-    posts
-    |> Repo.preload([
-      :author,
-      :tags,
-      comments: [:author]
-    ])
-  end
-
-  # Lazy preloading with custom function
-  def maybe_preload_comments(post, include_comments? \\ false) do
-    if include_comments? do
-      Repo.preload(post, [comments: [:author]])
-    else
-      post
-    end
-  end
 end
 ```
 
-### Advanced Preloading with DataLoader
+**Why this works:** Preloading uses IN queries to load related data in batches, typically 1-2 queries instead of N+1. Custom preload queries let you control exactly what related data is loaded.
 
-```elixir
-defmodule MyApp.DataLoader do
-  def source do
-    Dataloader.Ecto.new(MyApp.Repo, query: &query/2)
-  end
-
-  def query(Comment, %{scope: :with_author}) do
-    from c in Comment, preload: [:author]
-  end
-
-  def query(Post, %{scope: :published}) do
-    from p in Post, where: p.published == true
-  end
-
-  def query(queryable, _params) do
-    queryable
-  end
-end
-
-# Usage in context
-defmodule MyApp.Blog do
-  def list_posts_with_efficient_loading do
-    posts = Repo.all(Post)
-    
-    loader = 
-      Dataloader.new()
-      |> Dataloader.add_source(:blog, MyApp.DataLoader.source())
-
-    # Batch load comments for all posts
-    loader = 
-      Enum.reduce(posts, loader, fn post, acc ->
-        Dataloader.load(acc, :blog, {Comment, %{scope: :with_author}}, post.id)
-      end)
-
-    loader = Dataloader.run(loader)
-
-    # Attach loaded data
-    Enum.map(posts, fn post ->
-      comments = Dataloader.get(loader, :blog, {Comment, %{scope: :with_author}}, post.id)
-      %{post | comments: comments}
-    end)
-  end
-end
-```
+**When to use:** When you know you'll need related data. Don't preload data you won't use - it wastes memory and network bandwidth.
 
 ## N+1 Query Prevention
 
-### Identifying and Fixing N+1 Queries
+N+1 queries are a common performance killer. One query loads a list, then N additional queries load related data for each item.
 
 ```elixir
-# BAD: N+1 Query Pattern
-defmodule MyApp.BlogBad do
-  def list_posts_with_author_names do
-    posts = Repo.all(Post)
-    
-    # This will execute one query per post!
-    Enum.map(posts, fn post ->
-      author = Repo.get!(User, post.author_id)
-      %{title: post.title, author_name: author.name}
-    end)
-  end
+# ❌ This causes N+1 queries
+def show_user_posts(user_id) do
+  posts = Blog.get_posts_by_user(user_id)
+  
+  # This loads comments for each post individually!
+  Enum.map(posts, fn post ->
+    comments = Blog.get_comments_for_post(post.id)
+    %{post | comments: comments}
+  end)
 end
 
-# GOOD: Fixed with preloading
-defmodule MyApp.Blog do
-  def list_posts_with_author_names do
-    from(p in Post, preload: [:author])
-    |> Repo.all()
-    |> Enum.map(fn post ->
-      %{title: post.title, author_name: post.author.name}
-    end)
-  end
-
-  # EVEN BETTER: Use join and select
-  def list_posts_with_author_names_optimized do
-    from(p in Post,
-      join: a in assoc(p, :author),
-      select: %{title: p.title, author_name: a.name}
-    )
-    |> Repo.all()
-  end
+# ✅ Load everything efficiently
+def show_user_posts(user_id) do
+  from(p in Post,
+    where: p.user_id == ^user_id,
+    preload: [comments: [:author]]
+  )
+  |> Repo.all()
 end
-```
 
-### N+1 Detection Middleware
-
-```elixir
-defmodule MyApp.QueryLogger do
-  require Logger
-
-  def log_query(query, measurements, metadata, _config) do
-    if Application.get_env(:my_app, :log_queries, false) do
-      Logger.info("Query: #{query} - #{measurements.total_time}μs")
-    end
-  end
-
-  def warn_on_many_queries do
-    Process.put(:query_count, 0)
-    
-    :telemetry.attach(
-      "query-counter",
-      [:my_app, :repo, :query],
-      &count_queries/4,
-      nil
-    )
-  end
-
-  defp count_queries(_event, _measurements, _metadata, _config) do
-    count = Process.get(:query_count, 0) + 1
-    Process.put(:query_count, count)
-    
-    if count > 10 do
-      Logger.warn("High query count detected: #{count} queries")
-    end
-  end
+# ✅ Even better: Use joins when you need aggregates
+def show_user_posts_with_counts(user_id) do
+  from(p in Post,
+    left_join: c in assoc(p, :comments),
+    where: p.user_id == ^user_id,
+    group_by: p.id,
+    select: %{
+      post: p,
+      comment_count: count(c.id)
+    }
+  )
+  |> Repo.all()
 end
 ```
 
-## Index Usage and Analysis
+**Why this works:** Instead of N+1 queries (1 + N), you get 1-2 queries total. The database is much more efficient at handling one large operation than many small ones.
 
-### Strategic Index Creation
+**When to use:** Always be suspicious when you see `Enum.map` over database results that triggers more queries inside the map function.
+
+## Connection Pooling and Management
+
+Phoenix uses connection pooling to efficiently manage database connections. Proper configuration prevents connection exhaustion and optimizes resource usage.
 
 ```elixir
-# Migration with performance indexes
-defmodule MyApp.Repo.Migrations.CreatePerformanceIndexes do
+# config/prod.exs
+config :my_app, MyApp.Repo,
+  pool_size: 20,                    # Number of connections in pool
+  queue_target: 50,                 # Target time for checkout (ms)
+  queue_interval: 1000,             # Interval to check queue times
+  timeout: 15_000,                  # Query timeout (15 seconds)
+  ownership_timeout: 300_000        # How long pool waits for ownership
+```
+
+**Why this works:** The pool maintains ready connections, avoiding the overhead of establishing connections for each query. Timeouts prevent hung queries from blocking the pool.
+
+**When to tune:** When you see connection timeout errors, slow response times during peak traffic, or database connection limits being reached.
+
+## Index Strategy
+
+Database indexes dramatically speed up queries but slow down writes. The key is indexing the right columns for your query patterns.
+
+```elixir
+# In a migration
+defmodule MyApp.Repo.Migrations.AddPerformanceIndexes do
   use Ecto.Migration
 
   def change do
@@ -365,461 +206,173 @@ defmodule MyApp.Repo.Migrations.CreatePerformanceIndexes do
     # Partial index for published posts only
     create index(:posts, [:published_at], where: "published = true")
     
-    # Unique compound index
-    create unique_index(:user_roles, [:user_id, :role_id])
-    
     # Text search index (PostgreSQL)
     create index(:posts, [:title], using: :gin, prefix: :gin_trgm_ops)
-    
-    # Full-text search
-    execute "CREATE INDEX posts_search_idx ON posts USING gin(to_tsvector('english', title || ' ' || content))"
-    
-    # Covering index (includes additional columns)
-    create index(:posts, [:author_id], include: [:title, :published_at])
-    
-    # Expression index
-    create index(:users, ["lower(email)"], unique: true)
   end
+end
+
+# Query that benefits from the compound index
+def list_posts_by_author(author_id) do
+  from(p in Post,
+    where: p.author_id == ^author_id and p.published == true,
+    order_by: [desc: p.published_at]
+  )
+  |> Repo.all()
 end
 ```
 
-### Query Analysis Tools
+**Why this works:** Compound indexes match multiple WHERE conditions in one lookup. Partial indexes save space by only indexing relevant rows. The query planner uses these indexes automatically when they match your query patterns.
+
+**When to add indexes:** After profiling slow queries, before they become performance problems in production. Don't over-index - each index adds write overhead.
+
+## Query Composition for Reusability
+
+Building reusable query components keeps your code DRY and makes optimization easier.
 
 ```elixir
-defmodule MyApp.QueryAnalyzer do
-  alias MyApp.Repo
+defmodule MyApp.Blog.PostQueries do
+  import Ecto.Query
+  alias MyApp.Blog.Post
 
-  def explain_query(query) do
-    explained = Ecto.Adapters.SQL.explain(Repo, :all, query, analyze: true, buffers: true)
-    IO.puts(explained)
-    explained
+  def base_query, do: from p in Post, as: :post
+
+  def published(query \\ base_query()) do
+    from [post: p] in query, where: p.published == true
   end
 
-  def analyze_slow_queries do
-    # Enable query logging
-    Ecto.Adapters.SQL.query!(
-      Repo,
-      "SET log_min_duration_statement = 100",
-      []
-    )
+  def by_author(query \\ base_query(), author_id) do
+    from [post: p] in query, where: p.author_id == ^author_id
   end
 
-  def find_missing_indexes do
-    query = """
-    SELECT 
-      schemaname,
-      tablename,
-      attname,
-      n_distinct,
-      correlation
-    FROM pg_stats
-    WHERE schemaname = 'public'
-      AND n_distinct > 100
-      AND correlation < 0.1
-    ORDER BY n_distinct DESC
-    """
-    
-    Ecto.Adapters.SQL.query!(Repo, query, [])
+  def recent_first(query \\ base_query()) do
+    from [post: p] in query, order_by: [desc: p.published_at]
   end
 
-  def table_sizes do
-    query = """
-    SELECT 
-      schemaname,
-      tablename,
-      pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as size,
-      pg_total_relation_size(schemaname||'.'||tablename) as size_bytes
-    FROM pg_tables 
-    WHERE schemaname = 'public'
-    ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC
-    """
-    
-    Ecto.Adapters.SQL.query!(Repo, query, [])
+  def with_comment_count(query \\ base_query()) do
+    from [post: p] in query,
+      left_join: c in assoc(p, :comments),
+      group_by: p.id,
+      select_merge: %{comment_count: count(c.id)}
+  end
+
+  # Compose complex queries from simple building blocks
+  def recent_published_posts_by_author(author_id, limit \\ 10) do
+    base_query()
+    |> published()
+    |> by_author(author_id)
+    |> recent_first()
+    |> limit(^limit)
   end
 end
 ```
 
-## Connection Pooling
+**Why this works:** Query composition lets you build complex queries from tested, optimized components. You can optimize individual query functions without affecting all the places they're used.
 
-### DBConnection Pool Configuration
+**When to use:** When you have common query patterns used across multiple contexts. This approach scales well as your application grows.
+
+## Read Replicas for Scale
+
+As your application grows, you can separate read and write operations to different database instances.
 
 ```elixir
 # config/config.exs
 config :my_app, MyApp.Repo,
-  # Connection pool configuration
-  pool_size: 20,                    # Number of connections in pool
-  queue_target: 50,                 # Target time for checkout (ms)
-  queue_interval: 1000,             # Interval to check queue times
-  
-  # Connection timeouts
-  timeout: 15_000,                  # Query timeout (15 seconds)
-  connect_timeout: 5_000,           # Connection timeout (5 seconds)
-  handshake_timeout: 5_000,         # Handshake timeout
-  
-  # Pool management
-  pool_overflow: 10,                # Allow extra connections if needed
-  lazy: false,                      # Start connections immediately
-  
-  # Connection validation
-  disconnect_on_error_codes: [:closed, :closed_for_reading]
-
-# Environment-specific configurations
-# config/prod.exs
-config :my_app, MyApp.Repo,
-  pool_size: String.to_integer(System.get_env("POOL_SIZE") || "20"),
-  queue_target: 50,
-  queue_interval: 1000,
-  timeout: 15_000,
-  ssl: true,
-  ssl_opts: [
-    verify: :verify_peer,
-    cacerts: :public_key.cacerts_get(),
-    server_name_indication: 'db.example.com',
-    customize_hostname_check: [
-      match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
-    ]
-  ]
-```
-
-### Pool Monitoring and Management
-
-```elixir
-defmodule MyApp.PoolMonitor do
-  use GenServer
-  require Logger
-
-  def start_link(opts) do
-    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
-  end
-
-  def init(_opts) do
-    # Check pool stats every 30 seconds
-    :timer.send_interval(30_000, :check_pool)
-    {:ok, %{}}
-  end
-
-  def handle_info(:check_pool, state) do
-    stats = DBConnection.status(MyApp.Repo)
-    
-    case stats do
-      %{ready_conn_count: ready, checked_out_count: checked_out, pool_size: pool_size} ->
-        utilization = checked_out / pool_size * 100
-        
-        if utilization > 80 do
-          Logger.warn("High database pool utilization: #{utilization}% (#{checked_out}/#{pool_size})")
-        end
-        
-        Logger.info("DB Pool Stats - Ready: #{ready}, Used: #{checked_out}/#{pool_size} (#{utilization}%)")
-      
-      _ ->
-        Logger.warn("Could not retrieve database pool statistics")
-    end
-    
-    {:noreply, state}
-  end
-
-  def get_pool_stats do
-    DBConnection.status(MyApp.Repo)
-  end
-end
-
-# Add to application supervision tree
-# lib/my_app/application.ex
-def start(_type, _args) do
-  children = [
-    MyApp.Repo,
-    MyApp.PoolMonitor,
-    # ... other children
-  ]
-  
-  opts = [strategy: :one_for_one, name: MyApp.Supervisor]
-  Supervisor.start_link(children, opts)
-end
-```
-
-### Connection Pool Patterns
-
-```elixir
-defmodule MyApp.DatabaseUtils do
-  alias MyApp.Repo
-  
-  # Use transactions for multiple operations
-  def create_user_with_profile(user_attrs, profile_attrs) do
-    Repo.transaction(fn ->
-      with {:ok, user} <- create_user(user_attrs),
-           {:ok, profile} <- create_profile(user, profile_attrs) do
-        {user, profile}
-      else
-        {:error, reason} -> Repo.rollback(reason)
-      end
-    end)
-  end
-
-  # Use checkout for long-running operations
-  def bulk_import(data_list) do
-    Repo.checkout(fn ->
-      Enum.each(data_list, &import_record/1)
-    end, timeout: 60_000)
-  end
-
-  # Pool-aware batching
-  def process_in_batches(items, batch_size \\ 100) do
-    items
-    |> Enum.chunk_every(batch_size)
-    |> Enum.each(fn batch ->
-      Repo.transaction(fn ->
-        Enum.each(batch, &process_item/1)
-      end)
-    end)
-  end
-
-  defp import_record(data) do
-    # Import logic here
-  end
-
-  defp process_item(item) do
-    # Process item logic
-  end
-end
-```
-
-## Read Replicas
-
-### Read Replica Configuration
-
-```elixir
-# lib/my_app/repo.ex
-defmodule MyApp.Repo do
-  use Ecto.Repo,
-    otp_app: :my_app,
-    adapter: Ecto.Adapters.Postgres
-end
-
-# Read replica repo
-defmodule MyApp.ReadRepo do
-  use Ecto.Repo,
-    otp_app: :my_app,
-    adapter: Ecto.Adapters.Postgres,
-    read_only: true
-end
-
-# config/config.exs
-config :my_app, MyApp.Repo,
-  # Primary database configuration
-  url: System.get_env("DATABASE_URL"),
-  pool_size: 20
+  url: System.get_env("DATABASE_URL")  # Primary database
 
 config :my_app, MyApp.ReadRepo,
-  # Read replica configuration
-  url: System.get_env("READ_DATABASE_URL"),
-  pool_size: 15,
-  priv: "priv/repo" # Share migrations with primary repo
-```
+  url: System.get_env("READ_DATABASE_URL"),  # Read replica
+  pool_size: 15
 
-### Read/Write Separation Patterns
-
-```elixir
-defmodule MyApp.BlogReader do
+# Usage in contexts
+defmodule MyApp.Blog do
   alias MyApp.{Repo, ReadRepo}
-  alias MyApp.Blog.Post
-  import Ecto.Query
 
-  # Read operations use read replica
+  # Writes go to primary
+  def create_post(attrs) do
+    %Post{}
+    |> Post.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  # Reads can use replica
   def list_published_posts do
     from(p in Post, where: p.published == true)
     |> ReadRepo.all()
   end
 
-  def get_post!(id) do
-    ReadRepo.get!(Post, id)
-  end
-
-  def search_posts(term) do
-    # Complex read queries on replica
-    search_query(term)
-    |> ReadRepo.all()
-  end
-
-  # Write operations use primary database
-  def create_post(attrs) do
-    %Post{}
-    |> Post.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  def update_post(post, attrs) do
-    post
-    |> Post.changeset(attrs)
-    |> Repo.update()
-  end
-
-  defp search_query(term) do
-    from p in Post,
-      where: fragment("? @@ to_tsquery(?)", p.search_vector, ^term),
-      order_by: [desc: fragment("ts_rank(?, to_tsquery(?))", p.search_vector, ^term)]
-  end
-end
-```
-
-### Automatic Read/Write Routing
-
-```elixir
-defmodule MyApp.RepoRouter do
-  @read_operations [:all, :one, :one!, :get, :get!, :get_by, :get_by!, :exists?, :aggregate]
-  @write_operations [:insert, :insert!, :update, :update!, :delete, :delete!, :insert_all, :update_all, :delete_all]
-
-  def route_query(operation, query, opts \\ []) do
-    repo = select_repo(operation, opts)
-    apply(repo, operation, [query] ++ [opts])
-  end
-
-  defp select_repo(operation, opts) do
-    cond do
-      opts[:force_primary] -> MyApp.Repo
-      operation in @read_operations -> MyApp.ReadRepo
-      operation in @write_operations -> MyApp.Repo
-      true -> MyApp.Repo # Default to primary for unknown operations
-    end
-  end
-
-  # Wrapper functions
-  def all(query, opts \\ []), do: route_query(:all, query, opts)
-  def get!(schema, id, opts \\ []), do: route_query(:get!, schema, [id] ++ [opts])
-  def insert(changeset, opts \\ []), do: route_query(:insert, changeset, opts)
-  def update(changeset, opts \\ []), do: route_query(:update, changeset, opts)
-end
-
-# Usage in contexts
-defmodule MyApp.Blog do
-  alias MyApp.RepoRouter, as: Repo
-
-  def list_posts do
-    # Automatically routed to read replica
-    Repo.all(Post)
-  end
-
-  def get_post!(id) do
-    # Automatically routed to read replica
-    Repo.get!(Post, id)
-  end
-
-  def create_post(attrs) do
-    # Automatically routed to primary database
-    %Post{}
-    |> Post.changeset(attrs)
-    |> Repo.insert()
-  end
-
+  # Fresh data needed after writes
   def get_fresh_post!(id) do
-    # Force read from primary (after write)
-    Repo.get!(Post, id, force_primary: true)
+    Repo.get!(Post, id)  # Use primary for fresh data
   end
 end
 ```
+
+**Why this works:** Read replicas handle the majority of database load (usually 80%+ reads). The primary database focuses on writes and consistency-critical reads.
+
+**When to use:** When your database becomes a bottleneck, you have geographically distributed users, or you need to separate analytical queries from transactional ones.
+
+## Common Performance Pitfalls
+
+**Loading Too Much Data**
+Always use `select` when you don't need full structs. Loading 100 full Post records when you only need titles wastes memory and bandwidth.
+
+**Missing Preloads**
+If you see many individual `Repo.get` calls in your logs, you probably have N+1 queries. Use preloading or joins instead.
+
+**Over-Preloading**
+Don't preload associations you won't use. Each preload adds memory usage and query complexity.
+
+**Ignoring Database Logs**
+Enable query logging in development to catch N+1 queries and slow operations early.
 
 ## Performance Monitoring
 
-### Query Performance Tracking
+Set up monitoring to catch performance issues before they impact users.
 
 ```elixir
-defmodule MyApp.QueryInstrumentation do
-  require Logger
+# config/prod.exs
+config :my_app, MyApp.Repo,
+  log: false,  # Use telemetry instead of logs in production
+  telemetry_prefix: [:my_app, :repo]
 
-  def setup_telemetry do
-    :telemetry.attach_many(
-      "query-instrumentation",
-      [
-        [:my_app, :repo, :query],
-        [:my_app, :read_repo, :query]
-      ],
-      &handle_query_event/4,
-      nil
-    )
-  end
-
-  def handle_query_event([:my_app, repo, :query], measurements, metadata, _config) do
-    query_time = measurements.total_time
-    
-    # Log slow queries
-    if query_time > 1_000_000 do # 1 second in microseconds
-      Logger.warn("""
-      Slow query detected on #{repo}:
-      Time: #{query_time / 1_000}ms
-      Query: #{metadata.query}
-      """)
-    end
-
-    # Track query metrics
-    :telemetry.execute(
-      [:my_app, :database, :query],
-      %{duration: query_time},
-      %{repo: repo, query_type: classify_query(metadata.query)}
-    )
-  end
-
-  defp classify_query(query) do
-    cond do
-      String.starts_with?(query, "SELECT") -> :read
-      String.starts_with?(query, "INSERT") -> :write
-      String.starts_with?(query, "UPDATE") -> :write
-      String.starts_with?(query, "DELETE") -> :write
-      true -> :other
-    end
-  end
-end
-
-# Add to application startup
-def start(_type, _args) do
-  MyApp.QueryInstrumentation.setup_telemetry()
-  # ... rest of application
-end
+# Set up telemetry to track slow queries
+:telemetry.attach(
+  "slow-query-logger",
+  [:my_app, :repo, :query],
+  &MyApp.SlowQueryLogger.handle_event/4,
+  nil
+)
 ```
 
-### Database Health Checks
+**Why this works:** Telemetry gives you detailed metrics without the overhead of string-based logging. You can send these metrics to monitoring systems for alerting and analysis.
 
-```elixir
-defmodule MyApp.DatabaseHealth do
-  alias MyApp.{Repo, ReadRepo}
+**When to use:** Always in production. Consider adding query time thresholds that trigger alerts when exceeded.
 
-  def health_check do
-    %{
-      primary: check_connection(Repo),
-      read_replica: check_connection(ReadRepo),
-      pool_stats: pool_statistics()
-    }
-  end
+## Decision Criteria
 
-  defp check_connection(repo) do
-    try do
-      Ecto.Adapters.SQL.query!(repo, "SELECT 1", [])
-      %{status: :healthy, timestamp: DateTime.utc_now()}
-    rescue
-      _ -> %{status: :unhealthy, timestamp: DateTime.utc_now()}
-    end
-  end
+**Optimize queries when:**
+- Individual queries take > 100ms
+- Pages load slowly due to database time
+- Database CPU/memory usage is consistently high
 
-  defp pool_statistics do
-    %{
-      primary: DBConnection.status(Repo),
-      read_replica: DBConnection.status(ReadRepo)
-    }
-  end
+**Add indexes when:**
+- Queries scan large tables without indexes
+- You have consistent query patterns
+- Read performance matters more than write performance
 
-  def cache_hit_ratio do
-    query = """
-    SELECT 
-      sum(heap_blks_read) as heap_read,
-      sum(heap_blks_hit) as heap_hit,
-      sum(heap_blks_hit) / (sum(heap_blks_hit) + sum(heap_blks_read)) as ratio
-    FROM pg_statio_user_tables
-    """
-    
-    case Ecto.Adapters.SQL.query(Repo, query, []) do
-      {:ok, %{rows: [[_, _, ratio]]}} -> Float.round(ratio * 100, 2)
-      _ -> nil
-    end
-  end
-end
-```
+**Use preloading when:**
+- You always need related data
+- You're seeing N+1 query patterns
+- Related data fits comfortably in memory
 
-This comprehensive database performance recipe provides production-ready patterns for optimizing database interactions in Phoenix applications, ensuring efficient queries, proper connection management, and scalable read/write patterns.
+**Consider read replicas when:**
+- Database is a bottleneck despite optimization
+- You have geographically distributed users
+- You need to run heavy analytical queries
+
+## References
+
+- [Ecto Query Documentation](https://hexdocs.pm/ecto/Ecto.Query.html)
+- [PostgreSQL Performance Tips](https://wiki.postgresql.org/wiki/Performance_Optimization)
+- [Phoenix Telemetry Guide](https://hexdocs.pm/phoenix/telemetry.html)
+- [Database Performance Best Practices](https://use-the-index-luke.com/)

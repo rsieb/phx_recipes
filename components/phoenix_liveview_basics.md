@@ -1,5 +1,21 @@
 # Phoenix LiveView Basics Recipe
 
+## Prerequisites & Related Recipes
+
+### Prerequisites
+- Understanding of Phoenix contexts and their API design
+- Basic knowledge of HTML and web development concepts
+- Familiarity with Elixir pattern matching and function definitions
+- Understanding of Ecto schemas and changesets
+
+### Related Recipes
+- **Foundation**: [Phoenix Contexts](../core/phoenix_contexts.md) - Building the business logic layer that LiveView consumes
+- **Data Layer**: [Ecto Schema Basics](../data/ecto_schema_basics.md) - Schemas and changesets used in LiveView forms
+- **Testing**: [Comprehensive Testing Guide](../testing/comprehensive_testing_guide.md) - Testing LiveView interactions and real-time features
+- **Advanced UI**: [Phoenix Components Guide](../components/phoenix_components_guide.md) - Building reusable components for LiveView
+- **Real-time**: [Phoenix Channels](../core/phoenix_channels.md) - Alternative approach for real-time features
+- **Deployment**: [Fly.io Phoenix Deployments](../deployment/fly-io_phoenix_deployments_and_production_debugging.md) - Deploying LiveView applications
+
 ## Introduction
 
 Phoenix LiveView enables rich, real-time user experiences with server-rendered HTML. LiveView processes live on the server and push HTML diff updates to the client over WebSocket connections, providing interactive features without requiring client-side JavaScript frameworks.

@@ -1,5 +1,18 @@
 # Phoenix Channels Recipe
 
+## Prerequisites & Related Recipes
+
+### Prerequisites
+- Understanding of WebSocket concepts and real-time communication
+- Familiarity with Phoenix contexts for business logic
+- Basic knowledge of JavaScript for client-side integration
+- Understanding of process communication in Elixir/Erlang
+
+### Related Recipes
+- **Alternative UI**: [Phoenix LiveView Basics](../components/phoenix_liveview_basics.md) - Real-time features without JavaScript
+- **Business Logic**: [Phoenix Contexts](../core/phoenix_contexts.md) - Backend logic for channel message handling
+- **Testing**: [Comprehensive Testing Guide](../testing/comprehensive_testing_guide.md) - Testing real-time channel interactions
+
 ## Introduction
 
 Phoenix Channels enable real-time bidirectional communication between clients and servers using WebSockets. Channels are perfect for chat applications, live updates, collaborative features, and any scenario requiring real-time data synchronization across multiple connected clients.

@@ -1,5 +1,16 @@
 # Ecto Migrations Recipe
 
+## Prerequisites & Related Recipes
+
+### Prerequisites
+- Understanding of database concepts (tables, indexes, constraints)
+- Basic knowledge of Ecto schemas and their field types
+- Familiarity with SQL DDL (Data Definition Language)
+
+### Related Recipes
+- **Foundation**: [Ecto Schema Basics](../data/ecto_schema_basics.md) - Designing schemas that require database structure
+- **Performance**: [Database Performance](../data/database_performance.md) - Migration strategies for optimal database performance
+
 ## Introduction
 
 Migrations are Ecto's way of managing database schema changes over time. They provide a version-controlled approach to modifying your database structure, ensuring that all environments can be brought to the same state. Each migration is a module that defines how to apply and rollback database changes.

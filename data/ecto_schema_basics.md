@@ -1,5 +1,20 @@
 # Ecto Schema Basics Recipe
 
+## Prerequisites & Related Recipes
+
+### Prerequisites
+- Basic understanding of Elixir structs and modules
+- Familiarity with database concepts (tables, columns, relationships)
+- Knowledge of data validation concepts
+
+### Related Recipes
+- **Business Logic**: [Phoenix Contexts](../core/phoenix_contexts.md) - Using schemas within contexts for business operations
+- **Web Layer**: [Phoenix LiveView Basics](../components/phoenix_liveview_basics.md) - Using schemas and changesets in LiveView forms
+- **Testing**: [Comprehensive Testing Guide](../testing/comprehensive_testing_guide.md) - Testing schema validations and changeset functions
+- **Advanced Data**: [Ecto Advanced Patterns](../data/ecto_advanced_patterns.md) - Complex queries and relationships
+- **Performance**: [Database Performance](../data/database_performance.md) - Schema optimization techniques
+- **Migrations**: [Ecto Migrations Guide](../data/ecto_migrations_guide.md) - Creating database structure for schemas
+
 ## Introduction
 
 Ecto schemas define the structure of your database tables and provide a mapping between Elixir structs and database records. They serve as the foundation for all database operations in Phoenix applications, defining fields, types, relationships, and validation rules.

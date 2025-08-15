@@ -1,6 +1,19 @@
 # Phoenix deployment mastery on Fly.io with Supabase integration
 
-Deploying Phoenix applications on Fly.io with Supabase requires navigating a complex ecosystem of configurations, potential pitfalls, and optimization strategies. This comprehensive guide distills current best practices into actionable recipes that will help you deploy, debug, and scale Phoenix applications effectively. Whether you’re troubleshooting a failed deployment or optimizing for production scale, these battle-tested approaches will save you hours of debugging time.
+## Prerequisites & Related Recipes
+
+### Prerequisites
+- Phoenix application ready for production deployment
+- Understanding of Phoenix LiveView for real-time features
+- Basic knowledge of Docker and containerization
+- Familiarity with environment configuration and secrets management
+
+### Related Recipes
+- **Web Layer**: [Phoenix LiveView Basics](../components/phoenix_liveview_basics.md) - Ensuring LiveView works correctly in production
+- **Configuration**: [Environment Configuration](../config/environment_configuration_phoenix_fly.md) - Setting up production environment variables
+- **Testing**: [Comprehensive Testing Guide](../testing/comprehensive_testing_guide.md) - Testing before deployment
+
+Deploying Phoenix applications on Fly.io with Supabase requires navigating a complex ecosystem of configurations, potential pitfalls, and optimization strategies. This comprehensive guide distills current best practices into actionable recipes that will help you deploy, debug, and scale Phoenix applications effectively. Whether you're troubleshooting a failed deployment or optimizing for production scale, these battle-tested approaches will save you hours of debugging time.
 
 ## Production deployment debugging when Phoenix apps fail to start
 

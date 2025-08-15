@@ -1,5 +1,19 @@
 # Phoenix Contexts Recipe
 
+## Prerequisites & Related Recipes
+
+### Prerequisites
+- Basic understanding of Elixir modules and functions
+- Familiarity with Ecto schemas and database operations
+- Understanding of Phoenix application structure
+
+### Related Recipes
+- **Foundation**: [Ecto Schema Basics](../data/ecto_schema_basics.md) - Understanding schemas before building contexts
+- **Testing**: [Comprehensive Testing Guide](../testing/comprehensive_testing_guide.md) - Testing context functions
+- **Web Layer**: [Phoenix LiveView Basics](../components/phoenix_liveview_basics.md) - Using contexts in LiveView
+- **Advanced Patterns**: [Database Performance](../data/database_performance.md) - Optimizing context queries
+- **TDD Approach**: [Phoenix TDD Recipe](../workflows/phoenix_tdd_recipe.md) - Test-driven context development
+
 ## Introduction
 
 Contexts are Phoenix's way of organizing related functionality and creating boundaries between different parts of your application. They act as dedicated modules that expose and group related functionality, serving as the API layer between your web interface and your data layer.
