@@ -25,29 +25,52 @@ Blocks core flow: Y/N
 git checkout -b feature/task-NNN-description
 ```
 
-### RED: Write ALL Tests First
+### TRUE TDD: One Test at a Time
+
+#### 1. RED: Write ONE Failing Test
 ```elixir
 # test/myapp/context_test.exs
-test "creates resource" do
-  assert {:ok, _} = Context.create_resource(%{field: "value"})
-end
-
-# test/myapp_web/controllers/resource_controller_test.exs  
-test "POST /resources creates resource", %{conn: conn} do
-  conn = post(conn, ~p"/resources", %{resource: %{field: "value"}})
-  assert redirected_to(conn) =~ "/resources/"
+test "creates resource with valid attributes" do
+  assert {:ok, resource} = Context.create_resource(%{name: "Test"})
+  assert resource.name == "Test"
 end
 ```
+Run: `mix test` (should fail)
+Commit: `git commit -m "Add test for create_resource (RED)"`
 
-Commit: `git commit -m "Add tests for X (failing)"`
+#### 2. GREEN: Write Minimal Code to Pass
+```elixir
+# Just enough to make the test pass - nothing more!
+def create_resource(attrs) do
+  {:ok, %Resource{name: attrs[:name]}}
+end
+```
+Run: `mix test` (should pass)
+Commit: `git commit -m "Implement create_resource - 1 test passing (GREEN)"`
 
-### GREEN: Implement Layer by Layer
-1. **Schema/Migration** → test → commit
-2. **Context functions** → test → commit  
-3. **Controller/Routes** → test → commit
-4. **Templates** → test → commit
+#### 3. REFACTOR: Clean Up (if needed)
+Only if code needs improvement while tests stay green
+Commit: `git commit -m "Refactor: improve create_resource"`
 
-Commit pattern: `git commit -m "Implement X - N tests passing"`
+#### 4. REPEAT: Next Test
+```elixir
+# NOW write the second test
+test "validates required fields" do
+  assert {:error, changeset} = Context.create_resource(%{})
+  assert "can't be blank" in errors_on(changeset).name
+end
+```
+Run: `mix test` (should fail)
+Commit: `git commit -m "Add validation test (RED)"`
+
+Then implement, commit green, refactor if needed...
+
+### Important TDD Rules
+- **NEVER** write multiple tests before implementing
+- **NEVER** implement features without a failing test
+- **NEVER** write code beyond what the current test requires
+- Each cycle should take 5-15 minutes max
+- Commit after EVERY Red-Green-Refactor cycle
 
 ### REFACTOR: Clean & Merge
 ```bash
